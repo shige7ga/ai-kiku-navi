@@ -1,78 +1,83 @@
 # AIきくナビ
 
+## 概要
 
-# React + TypeScript + Vite
+AIきくナビは、IT初学者がAIへの質問や相談内容を整理し、伝わりやすいプロンプト（AIへの依頼文）を作成するツールです。
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+用途を選び、必要事項を入力するだけで、AIにそのまま渡せる文章を作れます。ログインは不要で、PC・スマートフォンのブラウザーで利用できます。
 
-Currently, two official plugins are available:
+## なぜ必要なのか
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+学習や開発でAIに相談するとき、「何を伝えればよいかわからない」「状況をうまく説明できない」「欲しい形式の回答が得られない」と悩むことがあります。
 
-## React Compiler
+AIきくナビは、用途ごとに入力項目と記入例を用意し、目的・現在の状況・補足情報・希望する回答形式を整理する手助けをします。質問のたびに一から文章を考える負担を減らし、よく使う依頼文は保存して再利用できます。
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 機能一覧
 
-## Expanding the ESLint configuration
+### 7種類の用途別テンプレート
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+| 用途 | 整理できる内容 |
+| --- | --- |
+| 技術的な質問 | 知りたいこと、学習状況、調べたことや不明点 |
+| エラー相談 | やりたいこと、エラー内容、実行環境、試したこと |
+| PR文作成 | 変更内容、変更の背景、動作確認の内容 |
+| Notion用まとめ | まとめたいメモ、用途や読む人、残したいポイント |
+| Codexへの実装依頼 | 実装したい機能、現在の技術構成、制約や完了条件 |
+| アイデア整理 | アイデア、対象の人や悩み、条件や迷っていること |
+| 文章要約 | 要約したい文章、用途や読む人、注目点や文字数の目安 |
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### プロンプトの生成・編集・コピー
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- 選んだ用途に合わせた入力フォームを表示します。
+- 入力内容から、目的・依頼内容、前提・現在の状況、補足情報をまとめたプロンプトを生成します。未入力の項目は省略します。
+- 回答形式と詳しさを選べます。指定しないこともできます。
+- 生成した本文は画面上で編集し、ボタンひとつでコピーできます。
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 自分用テンプレートの保存・再利用
 
+- 本文に名前を付けて、ブラウザーのLocalStorageに保存できます。
+- 名前・本文・作成日時・識別用IDを保存します。
+- 保存済みテンプレートを一覧から選び、本文を読み込んで編集・コピーできます。
+
+## 使い方
+
+### プロンプトを作る
+
+1. 「何を手伝ってほしいですか？」から用途を選びます。
+2. 表示された項目に入力します。最初の項目だけ必須で、それ以外はわかる範囲で入力できます。
+3. 「回答形式」と「回答の詳しさ」を選びます。
+4. 「プロンプトを生成」を押します。
+5. 「生成したプロンプト」の内容を確認し、必要に応じて編集します。
+6. 「プロンプトをコピー」を押し、利用するAIの入力欄に貼り付けます。
+
+このアプリが行うのは依頼文の作成までです。AIへの自動送信や、AIによる回答の生成は行いません。
+
+### 保存して再利用する
+
+1. 生成結果の下にある「自分用テンプレートの名前」を入力します。
+2. 「この本文を保存」を押します。
+3. 次に使うときは「自分用テンプレート」一覧の「再利用」を押します。
+4. 結果欄に読み込まれた本文を必要に応じて編集し、コピーします。
+
+保存対象はその時点の本文です。再利用時に用途別フォームへ入力内容を復元する機能はありません。再利用した本文を編集して保存すると、別のテンプレートとして追加されます。
+
+保存内容は同じブラウザーで利用でき、別の端末やブラウザーには同期されません。ブラウザーのサイトデータを削除すると、保存したテンプレートも消えます。
+
+### ローカルで起動する
+
+Node.js 24系とnpmを用意し、プロジェクトのディレクトリで実行します。
+
+```bash
+npm ci
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+起動後、ターミナルに表示されるURL（通常は `http://localhost:5173`）をブラウザーで開きます。
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Dockerを使う場合は、Docker Composeが利用できる環境で次を実行します。
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+docker compose up --build
 ```
+
+ブラウザーで `http://localhost:5173` を開きます。
