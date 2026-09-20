@@ -3,9 +3,19 @@ import type { FormEvent } from 'react'
 import { generatePrompt, templates } from './templates'
 import { loadTemplates, saveTemplate } from './storage'
 import type { SavedTemplate } from './storage'
+import DesignForm from './components/DesignForm'
+import DesignPreview from './components/DesignPreview'
+import PromptResult from './components/PromptResult'
+import TemplateForm from './components/TemplateForm'
+import AppHeader from './components/AppHeader'
+import type { PromptCategory } from './components/PromptTabs'
+import { defaultSettings, generateDesignPrompt } from './design/settings'
+import { copyPrompt } from './clipboard'
 import './App.css'
 
 function App() {
+  const [category, setCategory] = useState<PromptCategory>('design')
+  const [design, setDesign] = useState(defaultSettings)
   const [templateId, setTemplateId] = useState(templates[0].id)
   const [drafts, setDrafts] = useState<Record<string, Record<string, string>>>({})
   const [format, setFormat] = useState('見出しと箇条書き')
@@ -23,6 +33,19 @@ function App() {
   const template = templates.find((item) => item.id === templateId)!
   const values = drafts[templateId] ?? {}
 
+  function switchCategory(next: PromptCategory) {
+    setCategory(next)
+    if (next === 'github') setTemplateId('pr')
+    if (next === 'learning' && templateId === 'pr') setTemplateId('question')
+  }
+  function generateDesign() {
+    setResult(generateDesignPrompt(design))
+    setName(`${design.preset}のWebデザイン`)
+    setNotice('Promptを作成しました。内容を確認してコピーしてください。')
+    setError('')
+    resultRef.current?.focus()
+  }
+
   function generate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!values[template.fields[0].id]?.trim()) return
@@ -37,7 +60,7 @@ function App() {
     setNotice('')
     setError('')
     try {
-      await navigator.clipboard.writeText(result)
+      await copyPrompt(result)
       setNotice('プロンプトをコピーしました。AIの入力欄に貼り付けて使えます。')
     } catch {
       resultRef.current?.focus()
@@ -71,81 +94,40 @@ function App() {
   }
 
   return (
-    <main>
-      <header className="page-header">
-        <p className="eyebrow">AIへの「聞きたい」を、伝わる形に。</p>
-        <h1>AIきくナビ</h1>
-        <p>用途を選んで入力するだけで、AIにそのまま渡せるプロンプトを作れます。</p>
-        <p className="flow">用途を選ぶ → 入力する → 生成する → コピー／保存</p>
-      </header>
-      <div className="workspace">
-        <section className="panel" aria-labelledby="input-heading">
-          <h2 id="input-heading">1. 用途を選んで入力</h2>
-          <form onSubmit={generate}>
-            <label htmlFor="purpose">何を手伝ってほしいですか？</label>
-            <select id="purpose" value={templateId} onChange={(event) => setTemplateId(event.target.value)}>
-              {templates.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-            </select>
-            <p className="hint">最初の項目だけ必須です。わかる範囲で入力してください。</p>
-            {template.fields.map((field, index) => (
-              <div className="field" key={`${template.id}-${field.id}`}>
-                <label htmlFor={`field-${field.id}`}>{field.label} <span className="badge">{index === 0 ? '必須' : '任意'}</span></label>
-                <textarea id={`field-${field.id}`} rows={index === 0 ? 4 : 3} placeholder={field.placeholder}
-                  required={index === 0} value={values[field.id] ?? ''}
-                  onChange={(event) => setDrafts({ ...drafts, [templateId]: { ...values, [field.id]: event.target.value } })} />
-              </div>
-            ))}
-            <div className="field">
-              <label htmlFor="format">回答形式</label>
-              <select id="format" value={format} onChange={(event) => setFormat(event.target.value)}>
-                <option value="">指定しない</option>
-                <option>見出しと箇条書き</option><option>手順を順番に</option><option>コード例と解説</option><option>Markdown形式</option>
-              </select>
-            </div>
-            <div className="field">
-              <label htmlFor="detail">回答の詳しさ</label>
-              <select id="detail" value={detail} onChange={(event) => setDetail(event.target.value)}>
-                <option value="">指定しない</option>
-                <option>初学者向けに、専門用語を説明しながら詳しく</option><option>要点だけ簡潔に</option><option>具体例を交えて説明</option>
-              </select>
-            </div>
-            <button className="primary" type="submit" disabled={!values[template.fields[0].id]?.trim()}>プロンプトを生成</button>
-          </form>
-        </section>
-        <section className="panel" aria-labelledby="result-heading">
-          <h2 id="result-heading">2. 確認してコピー・保存</h2>
-          <p className="hint">生成した文章はここで編集できます。AIへの送信は行いません。</p>
-          <label htmlFor="result">生成したプロンプト</label>
-          <textarea id="result" ref={resultRef} className="result" rows={17} value={result}
-            placeholder="入力して「プロンプトを生成」を押すと、ここに表示されます。"
-            onChange={(event) => { setResult(event.target.value); setNotice(''); setError('') }} />
-          <button type="button" className="primary" disabled={!result.trim()} onClick={copy}>プロンプトをコピー</button>
-          <form className="save-form" onSubmit={save}>
-            <label htmlFor="template-name">自分用テンプレートの名前</label>
-            <input id="template-name" value={name} maxLength={80} required placeholder="例：Reactのエラー相談"
-              onChange={(event) => setName(event.target.value)} />
-            <button type="submit" disabled={!result.trim() || !name.trim()}>この本文を保存</button>
-          </form>
-          <p className="feedback" role="status">{notice}</p>
-          {error && <p className="error" role="alert">{error}</p>}
-        </section>
-      </div>
-      <section className="panel saved-panel" aria-labelledby="saved-heading">
-        <h2 id="saved-heading">自分用テンプレート</h2>
-        <p className="hint">このブラウザーに保存されます。「再利用」で本文を読み込み、編集・コピーできます。</p>
+    <>
+      <AppHeader category={category} onChange={switchCategory} />
+      <main>
         {initialStorage.error && <p className="error" role="alert">{initialStorage.error}</p>}
-        {saved.length === 0 ? <p className="empty">まだ保存したテンプレートはありません。</p> : (
-          <ul className="saved-list">
-            {saved.map((item) => (
-              <li key={item.id}>
-                <div><h3>{item.name}</h3><time dateTime={item.createdAt}>{new Date(item.createdAt).toLocaleDateString('ja-JP')}</time></div>
-                <button type="button" onClick={() => reuse(item)} aria-label={`${item.name}を再利用`}>再利用</button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-    </main>
+        <div id="category-panel" role="tabpanel" aria-labelledby={`tab-${category}`}>
+          {category === 'design' && <DesignPreview settings={design} />}
+          {category === 'design' && <DesignForm settings={design} onChange={setDesign} onGenerate={generateDesign} />}
+          {category === 'saved' && (
+            <section className="panel saved-panel" aria-labelledby="saved-heading">
+              <h2 id="saved-heading">自分用テンプレート</h2>
+              <p className="hint">このブラウザーに保存されます。「再利用」で本文を読み込み、編集・コピーできます。</p>
+              {saved.length === 0 ? <p className="empty">まだ保存したテンプレートはありません。</p> : (
+                <ul className="saved-list">
+                  {saved.map((item) => (
+                    <li key={item.id}>
+                      <div>
+                        <h3>{item.name}</h3>
+                        <time dateTime={item.createdAt}>{new Date(item.createdAt).toLocaleDateString('ja-JP')}</time>
+                      </div>
+                      <button type="button" onClick={() => reuse(item)} aria-label={`${item.name}を再利用`}>再利用</button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          )}
+          <div className={category === 'learning' || category === 'github' ? 'workspace' : 'result-workspace'}>
+            {(category === 'learning' || category === 'github') && <TemplateForm {...{ templateId, setTemplateId, drafts, setDrafts, format, setFormat, detail, setDetail, template, values, generate }} availableTemplates={templates.filter((item) => category === 'github' ? item.id === 'pr' : item.id !== 'pr')} />}
+            <PromptResult {...{ result, name, notice, error, resultRef, setResult, setName, setNotice, setError, copy, save }} />
+          </div>
+
+        </div>
+      </main>
+    </>
   )
 }
 
